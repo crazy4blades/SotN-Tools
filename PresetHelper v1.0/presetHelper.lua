@@ -1,4 +1,4 @@
--- Symphony of the Night - PresetHelper v0.1
+-- Symphony of the Night - PresetHelper v0.2
 -- Crazy4blades
 -- Load presets from external file
 local presets = dofile("preset_definitions.lua")
@@ -47,7 +47,6 @@ function detectPresetName()
         if byte == 0x00 then
             break
         end
-        -- Skip leading spaces
         if not foundNonSpace and byte == string.byte(" ") then
             goto continue
         end
@@ -65,14 +64,27 @@ function detectPresetName()
     end
 
     -- Normalize preset name
-    result = result:gsub("[%z\1-\31\127]", "") -- remove ASCII control chars
-    :gsub("\194[\128-\191]", " ") -- common UTF‑8 NBSP (0xC2 0xA0) and similar
-    :gsub("\129", " ") -- handle stray 0x81 byte
-    :gsub("^%s*(.-)%s*$", "%1") -- trim
-    :gsub("%s*|%s*", "-"):gsub("%s*'%s*", "-"):gsub("%s+", "-"):gsub("^%-+", ""):gsub("%-+$", "")
+    result = result:gsub("[%z\1-\31\127]", "")
+        :gsub("\194[\128-\191]", " ")
+        :gsub("\129", " ")
+        :gsub("^%s*(.-)%s*$", "%1")
+        :gsub("%s*|%s*", "-")
+        :gsub("%s*'%s*", "-")
+        :gsub("%s+", "-")
+        :gsub("^%-+", "")
+        :gsub("%-+$", "")
 
+    console.log(chars)
+
+    -- Try exact match first
+    if presets[result] then
+        return result
+    end
+
+    -- Try prefix match
     for name, _ in pairs(presets) do
-        if result == name then
+        if name:sub(1, #result) == result then
+            print(string.format("Partial match resolved to: %s", name))
             return name
         end
     end
@@ -122,7 +134,7 @@ function renderHints()
 
         -- Draw signature below all hints
         local signatureY = 200
-        drawHint("PresetHelper v0.1 by CRAZY4BLADES", baseX, signatureY)
+        drawHint("PresetHelper v0.2 by CRAZY4BLADES", baseX, signatureY)
     else
         gui.clearGraphics()
         startFrame = nil
